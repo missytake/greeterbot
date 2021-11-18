@@ -1,2 +1,2 @@
-def test_basicpy():
+def test_basicpy() -> None:
     pass
