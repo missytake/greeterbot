@@ -7,6 +7,6 @@ auto-replies to all those mails with an error message.
 ## Usage
 
 ```
-isolationbot noreply@example.org p4$$w0rd
+isolationbot --email noreply@example.org --password p4$$w0rd /tmp/noreplydb
 ```
 
