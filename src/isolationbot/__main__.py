@@ -26,6 +26,7 @@ class GreetPlugin:
         if self.running is False:
             print("trying to create account...")
             account = deltachat.account.Account(self.dbpath)
+            account.start_io()
             domain = account.get_config("addr").split("@")[1]
             self.running = True
             print("waiting for new mailcow users")
@@ -33,11 +34,21 @@ class GreetPlugin:
                 sleep(5)
                 users = self.mailcow.get_user_list()
                 for user in users:
+                    if user.addr == account.get_config("addr"):
+                        # ignore self
+                        continue
                     if user.addr.split("@")[1] != domain:
                         # ignore users from other domains
                         continue
                     if user.addr not in [c.addr for c in account.get_contacts()]:
                         print("Inviting", user.addr)
+                        contact = account.create_contact(user.addr)
+                        chat = contact.create_chat()
+                        chat.send_text("Welcome to %s! Here you can try out webxdc." %
+                                       (domain,))
+                        chat.send_text("I prepared some for you:")
+                        chat.send_file("assets/draw.xdc")
+                        print("draw.xdc sent")
 
 
 def main(argv=None):
