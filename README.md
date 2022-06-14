@@ -1,14 +1,14 @@
-# Isolation Bot
+# Greeter Bot
 
-This Delta Chat bot is the target of a recipient filter; the idea is to block
-all outgoing mails in a mail server by directing it to this bot. It
-auto-replies to all those mails with an error message.
+This Delta Chat bot listens for new users on a mailcow instance and writes to
+them when they are created. It greets them and sends them a draw.xdc to try out
+on their devices.
 
 ## Setup
 
 ```
-git clone https://github.com/missytake/isolationbot
-cd isolationbot
+git clone https://github.com/missytake/greeterbot
+cd greeterbot
 python3 -m venv venv
 . venv/bin/activate
 pip install .
@@ -17,6 +17,6 @@ pip install .
 ## Usage
 
 ```
-isolationbot --email noreply@example.org --password p4$$w0rd /tmp/noreplydb
+greeterbot --email noreply@example.org --password p4$$w0rd /tmp/noreplydb
 ```
 
