@@ -49,6 +49,8 @@ def setup_account(addr: str, app_pw: str, data_dir: str, debug: bool) -> deltach
                   (ac.get_config("addr"), ac.get_config("mail_pw")))
             raise
     ac.start_io()
+    ac.set_avatar("assets/avatar.jpg")
+    ac.set_config("displayname", "Hello at try.webxdc.org!")
     return ac
 
 
@@ -68,7 +70,7 @@ class GreetBot:
                 # ignore users from other domains
                 continue
             if user.addr not in [c.addr for c in self.account.get_contacts()]:
-                time.sleep(60)
+                time.sleep(20)
                 print("Inviting", user.addr)
                 contact = self.account.create_contact(user.addr)
                 chat = contact.create_chat()
