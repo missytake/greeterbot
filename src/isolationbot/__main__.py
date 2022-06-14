@@ -4,6 +4,7 @@ import deltachat
 class AutoReplyPlugin:
     @deltachat.account_hookimpl
     def ac_incoming_message(self, message: deltachat.Message):
+        message.account.set_avatar("assets/avatar.jpg")
         message.create_chat()
         reply = "Sorry, sending messages to other servers than try.webxdc.org is not " \
             "supported on this server. If you want to try out Delta Chat, just create" \
