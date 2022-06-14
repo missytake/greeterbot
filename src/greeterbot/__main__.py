@@ -70,7 +70,7 @@ class GreetBot:
                 # ignore users from other domains
                 continue
             if user.addr not in [c.addr for c in self.account.get_contacts()]:
-                time.sleep(20)
+                time.sleep(20)  # wait until Delta is configured on the user side
                 print("Inviting", user.addr)
                 contact = self.account.create_contact(user.addr)
                 chat = contact.create_chat()
@@ -78,7 +78,11 @@ class GreetBot:
                                (self.domain,))
                 chat.send_text("I prepared some for you:")
                 chat.send_file("assets/draw.xdc")
-                print("draw.xdc sent")
+                chat.send_file("assets/2048.xdc")
+                chat.send_file("assets/chess.xdc")
+                chat.send_text("unfortunately I can't play chess, but why don't you "
+                               "forward the .xdc file to a friend with a try.webxdc.org"
+                               " account so you can play together?")
 
 
 def main():
