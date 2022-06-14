@@ -1,77 +1,109 @@
+import time
+
 import deltachat
+from deltachat.tracker import ConfigureFailed
 from mailadm.mailcow import MailcowConnection
 from time import sleep
+import tempfile
+import os
 import configargparse
 
 
-class AutoReplyPlugin:
-    @deltachat.account_hookimpl
-    def ac_incoming_message(self, message: deltachat.Message):
-        message.account.set_avatar("assets/avatar.jpg")
-        message.create_chat()
-        replytext = "Sorry, sending messages to other servers than try.webxdc.org is not " \
-            "supported on this server. If you want to try out Delta Chat, just create" \
-            " another try.webxdc.org account to send messages back and forth. If you " \
-            "have questions, please ask around at https://support.delta.chat."
-        reply = deltachat.message.Message.new_empty(message.account, "text")
-        reply.quote = message
-        reply.set_text(replytext)
-        message.chat.send_msg(reply)
+def setup_account(addr: str, app_pw: str, data_dir: str, debug: bool) -> deltachat.Account:
+    """Create an deltachat account with a given addr/password combination.
+
+    :param addr: the email address of the account.
+    :param app_pw: the SMTP/IMAP password of the accont.
+    :param data_dir: the directory where the data(base) is stored.
+    :param debug: whether to show log messages for the account.
+    :return: the deltachat account object.
+    """
+    try:
+        os.mkdir(os.path.join(data_dir, addr))
+    except FileExistsError:
+        pass
+    db_path = os.path.join(data_dir, addr, "db.sqlite")
+
+    ac = deltachat.Account(db_path)
+    if debug:
+        ac.add_account_plugin(deltachat.events.FFIEventLogger(ac))
+    if not ac.is_configured():
+        ac.set_config("addr", addr)
+    ac.set_config("mail_pw", app_pw)
+
+    ac.set_config("mvbox_move", "0")
+    try:
+        ac.set_config("mvbox_watch", "0")
+    except KeyError:
+        pass  # option will be deprecated in deltachat 1.70.1
+    ac.set_config("sentbox_watch", "0")
+    ac.set_config("bot", "1")
+    ac.set_config("mdns_enabled", "0")
+
+    if not ac.is_configured():
+        configtracker = ac.configure()
+        try:
+            configtracker.wait_finish()
+        except ConfigureFailed as e:
+            print("configuration setup failed for %s with password:\n%s" %
+                  (ac.get_config("addr"), ac.get_config("mail_pw")))
+            raise
+    ac.start_io()
+    return ac
 
 
-class GreetPlugin:
-    def __init__(self, mailcow_endpoint, mailcow_token, dbpath):
-        self.running = False
+class GreetBot:
+    def __init__(self, mailcow_endpoint, mailcow_token, account):
         self.mailcow = MailcowConnection(mailcow_endpoint, mailcow_token)
-        self.dbpath = dbpath
+        self.account = account
+        self.domain = account.get_config("addr").split("@")[1]
 
-    @deltachat.account_hookimpl
-    def ac_process_ffi_event(self, ffi_event):
-        if self.running is False:
-            print("trying to create account...")
-            account = deltachat.account.Account(self.dbpath)
-            account.start_io()
-            domain = account.get_config("addr").split("@")[1]
-            self.running = True
-            print("waiting for new mailcow users")
-            while 1:
-                sleep(5)
-                users = self.mailcow.get_user_list()
-                for user in users:
-                    if user.addr == account.get_config("addr"):
-                        # ignore self
-                        continue
-                    if user.addr.split("@")[1] != domain:
-                        # ignore users from other domains
-                        continue
-                    if user.addr not in [c.addr for c in account.get_contacts()]:
-                        print("Inviting", user.addr)
-                        contact = account.create_contact(user.addr)
-                        chat = contact.create_chat()
-                        chat.send_text("Welcome to %s! Here you can try out webxdc." %
-                                       (domain,))
-                        chat.send_text("I prepared some for you:")
-                        chat.send_file("assets/draw.xdc")
-                        print("draw.xdc sent")
+    def greet_users(self):
+        users = self.mailcow.get_user_list()
+        for user in users:
+            if user.addr == self.account.get_config("addr"):
+                # ignore self
+                continue
+            if user.addr.split("@")[1] != self.domain:
+                # ignore users from other domains
+                continue
+            if user.addr not in [c.addr for c in self.account.get_contacts()]:
+                time.sleep(60)
+                print("Inviting", user.addr)
+                contact = self.account.create_contact(user.addr)
+                chat = contact.create_chat()
+                chat.send_text("Welcome to %s! Here you can try out webxdc." %
+                               (self.domain,))
+                chat.send_text("I prepared some for you:")
+                chat.send_file("assets/draw.xdc")
+                print("draw.xdc sent")
 
 
-def main(argv=None):
+def main():
     args = configargparse.ArgumentParser()
     args.add_argument("--mailcow-endpoint", env_var="MAILCOW_ENDPOINT", required=True,
                       help="the API endpoint of the mailcow instance")
     args.add_argument("--mailcow-token", env_var="MAILCOW_TOKEN", required=True,
                       help="you can get an API token in the mailcow web interface")
-    args.add_argument("--email", required=True, help="the bot's email address")
-    args.add_argument("--password", required=True, help="the bot's password")
+    args.add_argument("email", help="the bot's email address")
+    args.add_argument("password", help="the bot's password")
+    args.add_argument("--db_path", help="location of the Delta Chat database")
     args.add_argument("--show-ffi", action="store_true", help="print Delta Chat log")
-    args.add_argument("db_path", help="location of the Delta Chat database")
-    options = args.parse_args()
+    ops = args.parse_args()
 
-    print(options)
-    greet_plugin = GreetPlugin(options.mailcow_endpoint,
-                               options.mailcow_token,
-                               options.db_path)
-    deltachat.run_cmdline(argv=argv, account_plugins=[AutoReplyPlugin(), greet_plugin])
+    # ensuring account data directory
+    if ops.db_path is None:
+        tempdir = tempfile.TemporaryDirectory(prefix="hellobot")
+        ops.db_path = tempdir.name
+    elif not os.path.exists(ops.db_path):
+        os.mkdir(ops.db_path)
+
+    ac = setup_account(ops.email, ops.password, ops.db_path, ops.show_ffi)
+    greeter = GreetBot(ops.mailcow_endpoint, ops.mailcow_token, ac)
+    print("waiting for new mailcow users...")
+    while 1:
+        greeter.greet_users()
+        sleep(5)
 
 
 if __name__ == "__main__":
