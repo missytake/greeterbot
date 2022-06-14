@@ -77,8 +77,8 @@ class GreetBot:
                 chat.send_text("Welcome to %s! Here you can try out webxdc." %
                                (self.domain,))
                 chat.send_text("I prepared some for you:")
-                chat.send_file("assets/draw.xdc")
-                chat.send_file("assets/2048.xdc")
+                chat.send_file("assets/checklist.xdc")
+                chat.send_file("assets/tower-builder.xdc")
                 chat.send_file("assets/chess.xdc")
                 chat.send_text("unfortunately I can't play chess, but why don't you "
                                "forward the .xdc file to a friend with a try.webxdc.org"
