@@ -29,18 +29,14 @@ def setup_account(addr: str, app_pw: str, data_dir: str, debug: bool) -> deltach
         ac.add_account_plugin(deltachat.events.FFIEventLogger(ac))
     if not ac.is_configured():
         ac.set_config("addr", addr)
-    ac.set_config("mail_pw", app_pw)
 
     ac.set_config("mvbox_move", "0")
-    try:
-        ac.set_config("mvbox_watch", "0")
-    except KeyError:
-        pass  # option will be deprecated in deltachat 1.70.1
     ac.set_config("sentbox_watch", "0")
     ac.set_config("bot", "1")
     ac.set_config("mdns_enabled", "0")
 
-    if not ac.is_configured():
+    if app_pw != ac.get_config("mail_pw") or not ac.is_configured():
+        ac.set_config("mail_pw", app_pw)
         configtracker = ac.configure()
         try:
             configtracker.wait_finish()
