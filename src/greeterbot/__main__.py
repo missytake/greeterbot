@@ -59,6 +59,9 @@ class GreetBot:
     def greet_users(self):
         users = self.mailcow.get_user_list()
         for user in users:
+            if not user.addr:
+                # skip broken accounts
+                continue
             if user.addr == self.account.get_config("addr"):
                 # ignore self
                 continue
