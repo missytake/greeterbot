@@ -37,7 +37,7 @@ def setup_account(addr: str, app_pw: str, data_dir: str, debug: bool) -> deltach
 
     if app_pw != ac.get_config("mail_pw") or not ac.is_configured():
         ac.set_config("mail_pw", app_pw)
-        configtracker = ac.configure()
+        configtracker = ac.configure(reconfigure=ac.is_configured())
         try:
             configtracker.wait_finish()
         except ConfigureFailed as e:
