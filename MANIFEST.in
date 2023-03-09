@@ -1,0 +1,2 @@
+include src/greeterbot/*.xdc
+include src/greeterbot/avatar.jpg

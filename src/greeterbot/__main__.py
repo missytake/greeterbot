@@ -7,6 +7,7 @@ from time import sleep
 import tempfile
 import os
 import configargparse
+import pkg_resources
 
 
 def setup_account(addr: str, app_pw: str, data_dir: str, debug: bool) -> deltachat.Account:
@@ -41,11 +42,14 @@ def setup_account(addr: str, app_pw: str, data_dir: str, debug: bool) -> deltach
         try:
             configtracker.wait_finish()
         except ConfigureFailed as e:
-            print("configuration setup failed for %s with password:\n%s" %
-                  (ac.get_config("addr"), ac.get_config("mail_pw")))
+            print(
+                "configuration setup failed for %s with password:\n%s"
+                % (ac.get_config("addr"), ac.get_config("mail_pw"))
+            )
             raise
     ac.start_io()
-    ac.set_avatar("assets/avatar.jpg")
+    avatar = pkg_resources.resource_filename(__name__, "avatar.jpg")
+    ac.set_avatar(avatar)
     ac.set_config("displayname", "Hello at try.webxdc.org!")
     return ac
 
@@ -73,23 +77,32 @@ class GreetBot:
                 print("Inviting", user.addr)
                 contact = self.account.create_contact(user.addr)
                 chat = contact.create_chat()
-                chat.send_text("Welcome to %s! Here you can try out webxdc." %
-                               (self.domain,))
+                chat.send_text("Welcome to %s! Here you can try out webxdc." % (self.domain,))
                 chat.send_text("I prepared some for you:")
-                chat.send_file("assets/checklist.xdc")
-                chat.send_file("assets/tower-builder.xdc")
-                chat.send_file("assets/chess.xdc")
-                chat.send_text("unfortunately I can't play chess, but why don't you "
-                               "forward the .xdc file to a friend with a try.webxdc.org"
-                               " account so you can play together?")
+                chat.send_file(pkg_resources.resource_filename(__name__, "checklist.xdc"))
+                chat.send_file(pkg_resources.resource_filename(__name__, "tower-builder.xdc"))
+                chat.send_file(pkg_resources.resource_filename(__name__, "chess.xdc"))
+                chat.send_text(
+                    "unfortunately I can't play chess, but why don't you "
+                    "forward the .xdc file to a friend with a try.webxdc.org"
+                    " account so you can play together?"
+                )
 
 
 def main():
     args = configargparse.ArgumentParser()
-    args.add_argument("--mailcow-endpoint", env_var="MAILCOW_ENDPOINT", required=True,
-                      help="the API endpoint of the mailcow instance")
-    args.add_argument("--mailcow-token", env_var="MAILCOW_TOKEN", required=True,
-                      help="you can get an API token in the mailcow web interface")
+    args.add_argument(
+        "--mailcow-endpoint",
+        env_var="MAILCOW_ENDPOINT",
+        required=True,
+        help="the API endpoint of the mailcow instance",
+    )
+    args.add_argument(
+        "--mailcow-token",
+        env_var="MAILCOW_TOKEN",
+        required=True,
+        help="you can get an API token in the mailcow web interface",
+    )
     args.add_argument("--email", help="the bot's email address", env_var="DELTACHAT_ADDR")
     args.add_argument("--password", help="the bot's password", env_var="DELTACHAT_PASSWORD")
     args.add_argument("--db_path", help="location of the Delta Chat database")
