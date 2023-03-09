@@ -37,7 +37,7 @@ def setup_account(addr: str, app_pw: str, data_dir: str, debug: bool) -> deltach
 
     if app_pw != ac.get_config("mail_pw") or not ac.is_configured():
         ac.set_config("mail_pw", app_pw)
-        configtracker = ac.configure(reconfigure=ac.is_configured())
+        configtracker = ac.configure()
         try:
             configtracker.wait_finish()
         except ConfigureFailed as e:
@@ -90,8 +90,8 @@ def main():
                       help="the API endpoint of the mailcow instance")
     args.add_argument("--mailcow-token", env_var="MAILCOW_TOKEN", required=True,
                       help="you can get an API token in the mailcow web interface")
-    args.add_argument("email", help="the bot's email address")
-    args.add_argument("password", help="the bot's password")
+    args.add_argument("--email", help="the bot's email address", env_var="DELTACHAT_ADDR")
+    args.add_argument("--password", help="the bot's password", env_var="DELTACHAT_PASSWORD")
     args.add_argument("--db_path", help="location of the Delta Chat database")
     args.add_argument("--show-ffi", action="store_true", help="print Delta Chat log")
     ops = args.parse_args()
