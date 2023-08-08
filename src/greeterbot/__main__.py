@@ -81,11 +81,9 @@ class GreetBot:
                 chat.send_text("I prepared some for you:")
                 chat.send_file(pkg_resources.resource_filename(__name__, "checklist.xdc"))
                 chat.send_file(pkg_resources.resource_filename(__name__, "tower-builder.xdc"))
-                chat.send_file(pkg_resources.resource_filename(__name__, "chess.xdc"))
                 chat.send_text(
-                    "unfortunately I can't play chess, but why don't you "
-                    "forward the .xdc file to a friend with a try.webxdc.org"
-                    " account so you can play together?"
+                    "You can send a message to xstore@testrun.org to discover more apps! "
+                    "Some of these games you can also play with friends, directly in the chat."
                 )
 
 
